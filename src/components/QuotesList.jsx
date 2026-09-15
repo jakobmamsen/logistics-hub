@@ -33,7 +33,7 @@ import {
   useModalState,
   Modal,
   Alert,
-} from '../../components'
+} from './index.jsx'
 import { Plus, ChevronRight, FilterX, Loader, AlertCircle } from 'lucide-react'
 import { useQuotesList } from '../../hooks/useQuotes'
 import { useAuth } from '../../hooks/useAuth'

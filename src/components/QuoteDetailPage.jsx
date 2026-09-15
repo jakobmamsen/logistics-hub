@@ -30,7 +30,7 @@ import {
   Modal,
   useModalState,
   Alert,
-} from './index'
+} from './index.jsx'
 import {
   Send,
   CheckCircle,
