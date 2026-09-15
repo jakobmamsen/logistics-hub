@@ -31,7 +31,7 @@ import {
   Modal,
   useModalState,
   Alert,
-} from '../../components'
+} from './index'
 import {
   Plus,
   Trash2,
