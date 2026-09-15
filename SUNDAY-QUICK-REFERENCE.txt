@@ -1,0 +1,108 @@
+╔═══════════════════════════════════════════════════════════════════════════╗
+║              LOGISTICS HUB - SUNDAY DEPLOYMENT QUICK REFERENCE             ║
+║                         ONE-PAGE CHEAT SHEET                              ║
+╚═══════════════════════════════════════════════════════════════════════════╝
+
+📱 TABS TO OPEN (Keep all 4 open at once)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Tab 1: https://github.com
+Tab 2: https://supabase.com
+Tab 3: https://netlify.com
+Tab 4: This checklist (or print it)
+
+⏰ TIMELINE (60 minutes total)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+10:00 - GitHub signup (Step 1-2)           ✓ ___
+10:10 - Upload files (Step 3-4)            ✓ ___
+10:20 - Supabase account (Step 5)          ✓ ___ WAIT 3 MIN
+10:30 - Netlify account (Step 6-7)         ✓ ___
+10:40 - Add credentials (Step 8)           ✓ ___ WAIT 3 MIN
+10:50 - Upload SQL (Step 9)                ✓ ___
+11:00 - Test (Step 10)                     ✓ ___
+11:05 - DONE! 🎉
+
+
+📋 STEP CHECKLIST
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+☐ Step 1: GitHub account
+☐ Step 2: Create repository named "logistics-hub"
+☐ Step 3: Download ZIP file (I'll send this)
+☐ Step 4: Upload ZIP contents to GitHub
+☐ Step 5: Supabase account + save URL and Key
+☐ Step 6: Netlify account
+☐ Step 7: Connect GitHub to Netlify
+☐ Step 8: Add environment variables to Netlify
+☐ Step 9: Run SQL files in Supabase
+☐ Step 10: Test login on live site
+
+
+💾 CREDENTIALS TO SAVE (write these down NOW)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+GitHub:
+  Username: _________________________________
+  Password: _________________________________
+
+Supabase:
+  Project URL: ______________________________
+  Anon Key: _________________________________
+  DB Password: _______________________________
+
+Netlify:
+  Site URL: https://___________________________
+
+
+🔍 WHAT TO PASTE WHERE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+In Netlify Environment Variables:
+  VITE_SUPABASE_URL = (paste Supabase URL)
+  VITE_SUPABASE_KEY = (paste Supabase Key)
+
+In Supabase SQL Editor (run these in order):
+  1. 01-auth-schema.sql
+  2. 02-master-data-schema.sql
+  3. 03-seed-master-data.sql
+  4. 04-seed-test-data.sql
+  5. 05-quotes-schema.sql
+  6. 06-jobs-operations-schema.sql
+
+
+✅ TEST CREDENTIALS (for Step 10)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Email: demo@example.com
+Password: demo123456
+
+
+⚠️ COMMON MISTAKES (Don't do these!)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+❌ Don't close the browser tab during database setup
+❌ Don't forget to save Supabase URL and Key
+❌ Don't skip Step 8 (environment variables)
+❌ Don't run SQL files out of order
+❌ Don't refresh Netlify page during deployment
+
+
+🆘 IF STUCK
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"Error message" → Take screenshot
+Site doesn't load → Wait 5 minutes + refresh
+Can't login → Check Supabase credentials in Netlify
+Confused on which step → Look at main checklist
+
+Contact: [I'll provide my email]
+
+
+🎯 SUCCESS LOOKS LIKE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✓ You see login page at https://[site].netlify.app
+✓ You can log in with demo@example.com
+✓ You see Dashboard with metrics
+✓ You can click "New Quote" button
+✓ Your team can access the same URL
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Good luck! You're doing great. This is straightforward — just follow each
+step in order and don't skip anything.
+
+See you on the other side! 🚀
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
