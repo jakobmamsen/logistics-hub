@@ -6,6 +6,7 @@ export { default as Badge } from './Badge';
 export { default as Form, FormGroup, FormLabel, FormInput } from './Form';
 export { default as Modal } from './Modal';
 export { default as Tabs } from './Tabs';
+export { default as Table } from './Table';
 
 // Aliases for common UI patterns
 export const CardBody = ({ children, className = '' }) => (
