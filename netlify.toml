@@ -1,31 +1,16 @@
-# NETLIFY CONFIGURATION FOR LOGISTICS HUB
-# Copy this file to your project root directory
-
 [build]
   command = "npm run build"
   publish = "dist"
-  environment = { NODE_VERSION = "18.17.1" }
 
-[build.environment]
-  NODE_ENV = "production"
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
 
-# Environment variables (set these in Netlify UI - Step 8)
-# VITE_SUPABASE_URL = "https://xxxxx.supabase.co"
-# VITE_SUPABASE_KEY = "eyJxxxxxx"
-
-# Redirects for single-page app
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
 
-# Cache settings
-[[headers]]
-  for = "/dist/*"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000"
-
-[[headers]]
-  for = "/index.html"
-  [headers.values]
-    Cache-Control = "public, max-age=0, must-revalidate"
+[dev]
+  port = 5173
+  command = "npm run dev"
