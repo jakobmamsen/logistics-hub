@@ -42,7 +42,7 @@ import {
   Check,
   Loader,
 } from 'lucide-react'
-import { useQuote } from '../../hooks/useQuotes'
+import { useQuote } from '../hooks/useQuotes'
 
 export const QuoteBuilder = () => {
   const navigate = useNavigate()

@@ -35,8 +35,8 @@ import {
   Alert,
 } from './index.jsx'
 import { Plus, ChevronRight, FilterX, Loader, AlertCircle } from 'lucide-react'
-import { useQuotesList } from '../../hooks/useQuotes'
-import { useAuth } from '../../hooks/useAuth'
+import { useQuotesList } from '../hooks/useQuotes'
+import { useAuth } from '../hooks/useAuth'
 
 export const QuotesList = () => {
   const navigate = useNavigate()

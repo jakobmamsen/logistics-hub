@@ -40,7 +40,7 @@ import {
   AlertCircle,
   ArrowRight,
 } from 'lucide-react'
-import { useQuote } from '../../hooks/useQuotes'
+import { useQuote } from '../hooks/useQuotes'
 import quoteApi from '../../api/quotes'
 
 export const QuoteDetailPage = () => {
