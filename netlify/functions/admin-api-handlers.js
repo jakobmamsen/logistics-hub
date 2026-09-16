@@ -17,6 +17,7 @@
 
 import { createClient } from "@supabase/supabase-js";
 import { asyncHandler } from './api-middleware.js';
+import { requirePermission } from './api-middleware.js';
 import { validateInput } from './api-utils.js';
 
 const supabase = createClient(process.env.VITE_SUPABASE_URL, process.env.VITE_SUPABASE_KEY);
