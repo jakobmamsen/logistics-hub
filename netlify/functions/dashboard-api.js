@@ -1,156 +1,165 @@
+// netlify/functions/dashboard-api.js
+// Single endpoint: returns all dashboard metrics + recent activity in one call.
+//
+// SECURITY: uses the service key, so RLS is bypassed. Anyone with this URL
+// sees everything. Fix before real data - see note at bottom of quotes-api.js.
+
 import { createClient } from '@supabase/supabase-js';
-import { asyncHandler, buildRequestContext, successResponse, errorResponse } from './api-middleware.js';
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL,
   process.env.VITE_SUPABASE_KEY
 );
 
-function formatTimeAgo(timestamp) {
-  const now = new Date();
-  const then = new Date(timestamp);
-  const secondsAgo = Math.floor((now - then) / 1000);
+const json = (statusCode, payload) => ({
+  statusCode,
+  headers: {
+    'Content-Type': 'application/json',
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Allow-Methods': 'GET, OPTIONS',
+  },
+  body: JSON.stringify(payload),
+});
 
+function formatTimeAgo(timestamp) {
+  const secondsAgo = Math.floor((Date.now() - new Date(timestamp)) / 1000);
   if (secondsAgo < 60) return 'just now';
   if (secondsAgo < 3600) return `${Math.floor(secondsAgo / 60)}m ago`;
   if (secondsAgo < 86400) return `${Math.floor(secondsAgo / 3600)}h ago`;
   if (secondsAgo < 604800) return `${Math.floor(secondsAgo / 86400)}d ago`;
-  return then.toLocaleDateString();
+  return new Date(timestamp).toLocaleDateString('en-GB');
 }
 
-export const handleMetrics = asyncHandler(async (req, event, context) => {
-  const { userId, teamId } = context;
+export const handler = async (event) => {
+  if (event.httpMethod === 'OPTIONS') return json(200, {});
 
   try {
-    // Count active quotes (status = 'sent')
-    const { count: activeQuotes, error: e1 } = await supabase
-      .from('quote')
-      .select('*', { count: 'exact', head: true })
-      .eq('team_id', teamId)
-      .eq('status', 'sent');
+    const params = event.queryStringParameters || {};
+    const teamId = params.team_id || null;   // optional filter
 
-    // Count pending jobs
-    const { count: pendingJobs, error: e2 } = await supabase
+    // --- jobs for this team -------------------------------------------
+    // task / pre_alert / exception have NO team_id column. They hang off
+    // job, so we resolve the team's job ids first and filter by those.
+    let jobQuery = supabase
       .from('job')
-      .select('*', { count: 'exact', head: true })
-      .eq('team_id', teamId)
-      .eq('status', 'pending');
+      .select('id, reference_number, status, created_at');
+    if (teamId) jobQuery = jobQuery.eq('team_id', teamId);
 
-    // Count my tasks (open, not completed)
-    const { count: myTasks, error: e3 } = await supabase
-      .from('task')
-      .select('*', { count: 'exact', head: true })
-      .eq('assigned_to', userId)
-      .neq('status', 'completed');
+    const { data: jobs, error: jobErr } = await jobQuery;
+    if (jobErr) return json(500, { success: false, error: jobErr.message, stage: 'job' });
 
-    // Count pre-alerts (pending)
-    const { count: preAlerts, error: e4 } = await supabase
-      .from('pre_alert')
-      .select('*', { count: 'exact', head: true })
-      .eq('team_id', teamId)
-      .eq('status', 'pending');
+    const jobIds = jobs.map((j) => j.id);
 
-    if (e1 || e2 || e3 || e4) throw new Error('Failed to fetch metrics');
-
-    // Week activity
-    const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-
-    const { count: weekQuotes } = await supabase
+    // --- quotes -------------------------------------------------------
+    let quoteQuery = supabase
       .from('quote')
-      .select('*', { count: 'exact', head: true })
-      .eq('team_id', teamId)
-      .gte('created_at', oneWeekAgo);
+      .select('id, reference_number, status, created_at');
+    if (teamId) quoteQuery = quoteQuery.eq('team_id', teamId);
 
-    const { count: weekJobs } = await supabase
-      .from('job')
-      .select('*', { count: 'exact', head: true })
-      .eq('team_id', teamId)
-      .gte('created_at', oneWeekAgo);
+    const { data: quotes, error: qErr } = await quoteQuery;
+    if (qErr) return json(500, { success: false, error: qErr.message, stage: 'quote' });
 
-    const { count: weekTasks } = await supabase
-      .from('task')
-      .select('*', { count: 'exact', head: true })
-      .gte('created_at', oneWeekAgo);
+    // --- tasks / pre-alerts / exceptions (via job ids) ----------------
+    let tasks = [], preAlerts = [], exceptions = [];
 
-    return successResponse({
-      activeQuotes: activeQuotes || 0,
-      pendingJobs: pendingJobs || 0,
-      myTasks: myTasks || 0,
-      preAlerts: preAlerts || 0,
+    if (jobIds.length > 0) {
+      const [tRes, pRes, eRes] = await Promise.all([
+        supabase.from('task')
+          .select('id, title, status, priority, due_date, created_at')
+          .in('job_id', jobIds),
+        supabase.from('pre_alert')
+          .select('id, status, created_at')
+          .in('job_id', jobIds),
+        supabase.from('exception')
+          .select('id, exception_type, severity, status, created_at')
+          .in('job_id', jobIds),
+      ]);
+
+      if (tRes.error) return json(500, { success: false, error: tRes.error.message, stage: 'task' });
+      if (pRes.error) return json(500, { success: false, error: pRes.error.message, stage: 'pre_alert' });
+      if (eRes.error) return json(500, { success: false, error: eRes.error.message, stage: 'exception' });
+
+      tasks = tRes.data;
+      preAlerts = pRes.data;
+      exceptions = eRes.data;
+    }
+
+    // --- metrics ------------------------------------------------------
+    const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    const within = (d) => new Date(d).getTime() >= oneWeekAgo;
+
+    const metrics = {
+      quotes: {
+        total:    quotes.length,
+        draft:    quotes.filter((q) => q.status === 'draft').length,
+        approved: quotes.filter((q) => q.status === 'approved').length,
+        sent:     quotes.filter((q) => q.status === 'sent').length,
+        won:      quotes.filter((q) => q.status === 'won').length,
+      },
+      jobs: {
+        total:     jobs.length,
+        pending:   jobs.filter((j) => j.status === 'pending').length,
+        active:    jobs.filter((j) => j.status === 'active').length,
+        completed: jobs.filter((j) => j.status === 'completed').length,
+      },
+      tasks: {
+        total:      tasks.length,
+        open:       tasks.filter((t) => t.status === 'open').length,
+        inProgress: tasks.filter((t) => t.status === 'in_progress').length,
+        overdue:    tasks.filter((t) =>
+                      t.due_date &&
+                      t.status !== 'completed' &&
+                      new Date(t.due_date) < new Date()
+                    ).length,
+      },
+      preAlerts: {
+        total:   preAlerts.length,
+        pending: preAlerts.filter((p) => p.status === 'pending').length,
+      },
+      exceptions: {
+        total:    exceptions.length,
+        open:     exceptions.filter((e) => e.status === 'open').length,
+        critical: exceptions.filter((e) => e.severity === 'critical').length,
+      },
       weekActivity: {
-        quotes: weekQuotes || 0,
-        jobs: weekJobs || 0,
-        tasks: weekTasks || 0
-      }
-    });
-  } catch (error) {
-    console.error('Metrics error:', error);
-    return errorResponse('Failed to fetch metrics', 500);
-  }
-});
+        quotes: quotes.filter((q) => within(q.created_at)).length,
+        jobs:   jobs.filter((j) => within(j.created_at)).length,
+        tasks:  tasks.filter((t) => within(t.created_at)).length,
+      },
+    };
 
-export const handleActivity = asyncHandler(async (req, event, context) => {
-  const { teamId } = context;
-  const limit = 10;
-
-  try {
-    // Recent quotes
-    const { data: recentQuotes } = await supabase
-      .from('quote')
-      .select('id, quote_number, status, created_at')
-      .eq('team_id', teamId)
-      .order('created_at', { ascending: false })
-      .limit(limit / 2);
-
-    // Recent jobs
-    const { data: recentJobs } = await supabase
-      .from('job')
-      .select('id, job_number, status, created_at')
-      .eq('team_id', teamId)
-      .order('created_at', { ascending: false })
-      .limit(limit / 2);
-
+    // --- recent activity feed -----------------------------------------
     const activity = [
-      ...(recentQuotes || []).map(q => ({
+      ...quotes.map((q) => ({
         id: q.id,
         type: 'quote',
-        title: `Quote ${q.quote_number}`,
-        action: q.status === 'sent' ? 'Submitted' : q.status === 'accepted' ? 'Approved' : 'Created',
-        timestamp: q.created_at
+        title: `Quote ${q.reference_number}`,
+        action: q.status.charAt(0).toUpperCase() + q.status.slice(1),
+        raw: q.created_at,
       })),
-      ...(recentJobs || []).map(j => ({
+      ...jobs.map((j) => ({
         id: j.id,
         type: 'job',
-        title: `Job ${j.job_number}`,
-        action: 'Created',
-        timestamp: j.created_at
-      }))
+        title: `Job ${j.reference_number}`,
+        action: j.status.charAt(0).toUpperCase() + j.status.slice(1),
+        raw: j.created_at,
+      })),
+      ...exceptions.map((e) => ({
+        id: e.id,
+        type: 'exception',
+        title: e.exception_type,
+        action: e.severity,
+        raw: e.created_at,
+      })),
     ]
-      .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
-      .slice(0, limit)
-      .map(item => ({
-        ...item,
-        timestamp: formatTimeAgo(item.timestamp)
-      }));
+      .sort((a, b) => new Date(b.raw) - new Date(a.raw))
+      .slice(0, 10)
+      .map(({ raw, ...rest }) => ({ ...rest, timestamp: formatTimeAgo(raw) }));
 
-    return successResponse(activity);
-  } catch (error) {
-    console.error('Activity error:', error);
-    return errorResponse('Failed to fetch activity', 500);
+    return json(200, { success: true, data: { metrics, activity } });
+
+  } catch (err) {
+    return json(500, { success: false, error: err.message, stack: err.stack });
   }
-});
-
-export const handler = asyncHandler(async (event, context) => {
-  const requestContext = await buildRequestContext(event, context);
-  const { method, path } = event.requestContext.http;
-
-  if (method === 'GET' && path.includes('/metrics')) {
-    return await handleMetrics(event, event, requestContext);
-  }
-
-  if (method === 'GET' && path.includes('/activity')) {
-    return await handleActivity(event, event, requestContext);
-  }
-
-  return errorResponse('Not found', 404);
-});
+};
