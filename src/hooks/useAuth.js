@@ -5,6 +5,7 @@ export const useAuth = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [userRole, setUserRole] = useState(null);
 
   useEffect(() => {
     // Check current session
@@ -12,6 +13,16 @@ export const useAuth = () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         setUser(session?.user || null);
+        
+        // Fetch user role if logged in
+        if (session?.user) {
+          const { data } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', session.user.id)
+            .single();
+          setUserRole(data?.role || 'user');
+        }
       } catch (err) {
         setError(err.message);
       } finally {
@@ -56,6 +67,8 @@ export const useAuth = () => {
       if (signUpError) throw signUpError;
 
       // Create profile
+      const newUser = data?.user;
+      if (!newUser) throw new Error('User creation failed - no user returned');
       const { error: profileError } = await supabase
         .from('profiles')
         .insert([{
@@ -82,6 +95,7 @@ export const useAuth = () => {
     try {
       await supabase.auth.signOut();
       setUser(null);
+      setUserRole(null);
     } catch (err) {
       setError(err.message);
       throw err;
@@ -90,7 +104,21 @@ export const useAuth = () => {
     }
   }, []);
 
-  return { user, loading, error, login, register, logout };
+  const hasRole = (role) => {
+    return userRole === role || userRole === 'admin';
+  };
+
+  return { 
+    user, 
+    currentUser: user,
+    loading, 
+    error, 
+    login, 
+    register, 
+    logout,
+    userRole,
+    hasRole
+  };
 };
 
 export default useAuth;
