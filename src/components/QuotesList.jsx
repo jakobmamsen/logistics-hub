@@ -1,35 +1,78 @@
 import React, { useState, useEffect } from 'react';
 import DashboardLayout from './DashboardLayout';
-import { useApi } from '../hooks/useApi';
-import Button from './Button';
 import Table from './Table';
 import Card from './Card';
-import { Plus, DollarSign } from 'lucide-react';
+import { Plus, DollarSign, FileText } from 'lucide-react';
+
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '/.netlify/functions';
+
+const STATUSES = ['all', 'draft', 'submitted', 'approved', 'sent', 'won', 'lost'];
 
 export default function QuotesList() {
-  const { request } = useApi();
   const [quotes, setQuotes] = useState([]);
   const [filter, setFilter] = useState('all');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchQuotes = async () => {
+    let cancelled = false;
+
+    async function fetchQuotes() {
+      setLoading(true);
+      setError(null);
       try {
-        const response = await request('/api/quotes');
-        if (response.success) {
-          setQuotes(response.data || []);
+        const res = await fetch(`${API_BASE}/quotes-api`, {
+          headers: { 'Content-Type': 'application/json' },
+        });
+
+        if (!res.ok) {
+          throw new Error(`${res.status} ${res.statusText}`);
         }
+
+        const payload = await res.json();
+        const rows = Array.isArray(payload)
+          ? payload
+          : payload.data ?? payload.quotes ?? [];
+
+        if (!cancelled) setQuotes(rows);
       } catch (err) {
         console.error('Failed to load quotes:', err);
+        if (!cancelled) setError(err.message);
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-    };
-    fetchQuotes();
-  }, [request]);
+    }
 
-  const filteredQuotes = filter === 'all' ? quotes : quotes.filter(q => q.status === filter);
+    fetchQuotes();
+    return () => { cancelled = true; };
+  }, []);
+
+  const filteredQuotes =
+    filter === 'all' ? quotes : quotes.filter((q) => q.status === filter);
+
+  const sellTotal = (q) => q.sell_total ?? null;
+
+  const money = (v) =>
+    v == null
+      ? '\u2014'
+      : new Intl.NumberFormat('en-US', {
+          style: 'currency',
+          currency: 'EUR',
+          maximumFractionDigits: 0,
+        }).format(v);
+
+  const customerName = (q) => q.customer_name ?? '\u2014';
 
   return (
     <DashboardLayout pageTitle="Quotes">
       <div className="space-y-6">
+
+        {error && (
+          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+            Couldn't load quotes: {error}
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <Card className="p-6">
             <div className="flex justify-between items-start">
@@ -37,14 +80,16 @@ export default function QuotesList() {
                 <p className="text-sm text-gray-600">Total Quotes</p>
                 <p className="text-3xl font-bold text-gray-900">{quotes.length}</p>
               </div>
-              <Plus size={24} className="text-blue-600" />
+              <FileText size={24} className="text-blue-600" />
             </div>
           </Card>
           <Card className="p-6">
             <div className="flex justify-between items-start">
               <div>
-                <p className="text-sm text-gray-600">Active (Sent)</p>
-                <p className="text-3xl font-bold text-gray-900">{quotes.filter(q => q.status === 'sent').length}</p>
+                <p className="text-sm text-gray-600">Approved</p>
+                <p className="text-3xl font-bold text-gray-900">
+                  {quotes.filter((q) => q.status === 'approved').length}
+                </p>
               </div>
               <DollarSign size={24} className="text-green-600" />
             </div>
@@ -52,16 +97,18 @@ export default function QuotesList() {
           <Card className="p-6">
             <div className="flex justify-between items-start">
               <div>
-                <p className="text-sm text-gray-600">Accepted</p>
-                <p className="text-3xl font-bold text-gray-900">{quotes.filter(q => q.status === 'accepted').length}</p>
+                <p className="text-sm text-gray-600">Draft</p>
+                <p className="text-3xl font-bold text-gray-900">
+                  {quotes.filter((q) => q.status === 'draft').length}
+                </p>
               </div>
-              <DollarSign size={24} className="text-green-600" />
+              <Plus size={24} className="text-gray-500" />
             </div>
           </Card>
         </div>
 
-        <div className="flex gap-2 mb-4">
-          {['all', 'draft', 'sent', 'accepted', 'rejected'].map(status => (
+        <div className="flex gap-2 mb-4 flex-wrap">
+          {STATUSES.map((status) => (
             <button
               key={status}
               onClick={() => setFilter(status)}
@@ -81,34 +128,64 @@ export default function QuotesList() {
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Quote #</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Client</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Route</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Customer</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Created</th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Status</th>
-                <th className="px-6 py-3 text-right text-xs font-semibold text-gray-700 uppercase">Amount</th>
+                <th className="px-6 py-3 text-right text-xs font-semibold text-gray-700 uppercase">Sell Total</th>
               </tr>
             </thead>
             <tbody>
-              {filteredQuotes.map((quote, idx) => (
-                <tr key={idx} className="border-b border-gray-200 hover:bg-gray-50 cursor-pointer">
-                  <td className="px-6 py-3 text-sm font-medium text-gray-900">{quote.quote_number || 'QT-' + (idx + 1)}</td>
-                  <td className="px-6 py-3 text-sm text-gray-600">{quote.client_name || 'Unknown'}</td>
-                  <td className="px-6 py-3 text-sm text-gray-600">Shanghai → Hamburg</td>
+              {loading && (
+                <tr>
+                  <td colSpan="5" className="px-6 py-8 text-center text-gray-500">
+                    Loading quotes...
+                  </td>
+                </tr>
+              )}
+
+              {!loading && filteredQuotes.map((quote) => (
+                <tr
+                  key={quote.id}
+                  className="border-b border-gray-200 hover:bg-gray-50 cursor-pointer"
+                >
+                  <td className="px-6 py-3 text-sm font-medium text-gray-900">
+                    {quote.reference_number ?? '\u2014'}
+                  </td>
+                  <td className="px-6 py-3 text-sm text-gray-600">
+                    {customerName(quote)}
+                  </td>
+                  <td className="px-6 py-3 text-sm text-gray-600">
+                    {quote.created_at
+                      ? new Date(quote.created_at).toLocaleDateString('en-GB')
+                      : '\u2014'}
+                  </td>
                   <td className="px-6 py-3">
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      quote.status === 'accepted' ? 'bg-green-100 text-green-800' :
-                      quote.status === 'sent' ? 'bg-blue-100 text-blue-800' :
-                      quote.status === 'rejected' ? 'bg-red-100 text-red-800' :
-                      'bg-gray-100 text-gray-800'
-                    }`}>
-                      {(quote.status || 'draft').charAt(0).toUpperCase() + (quote.status || 'draft').slice(1)}
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-medium ${
+                        quote.status === 'won' || quote.status === 'approved'
+                          ? 'bg-green-100 text-green-800'
+                          : quote.status === 'sent' || quote.status === 'submitted'
+                          ? 'bg-blue-100 text-blue-800'
+                          : quote.status === 'lost' || quote.status === 'rejected'
+                          ? 'bg-red-100 text-red-800'
+                          : 'bg-gray-100 text-gray-800'
+                      }`}
+                    >
+                      {(quote.status ?? 'draft').charAt(0).toUpperCase() +
+                        (quote.status ?? 'draft').slice(1)}
                     </span>
                   </td>
-                  <td className="px-6 py-3 text-right text-sm font-medium text-gray-900">${quote.total_amount || '4,200'}</td>
+                  <td className="px-6 py-3 text-right text-sm font-medium text-gray-900">
+                    {money(sellTotal(quote))}
+                  </td>
                 </tr>
               ))}
-              {filteredQuotes.length === 0 && (
+
+              {!loading && filteredQuotes.length === 0 && (
                 <tr>
-                  <td colSpan="5" className="px-6 py-8 text-center text-gray-500">No quotes found</td>
+                  <td colSpan="5" className="px-6 py-8 text-center text-gray-500">
+                    No quotes found
+                  </td>
                 </tr>
               )}
             </tbody>
