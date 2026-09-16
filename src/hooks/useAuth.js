@@ -43,6 +43,38 @@ export const useAuth = () => {
     }
   }, []);
 
+  const register = useCallback(async ({ email, password, name, team }) => {
+    setLoading(true);
+    setError(null);
+    try {
+      // Create auth user
+      const { data: { user: newUser }, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password
+      });
+      if (signUpError) throw signUpError;
+
+      // Create profile
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert([{
+          id: newUser.id,
+          email,
+          full_name: name,
+          team_id: team,
+          role: 'user'
+        }]);
+      if (profileError) throw profileError;
+
+      return { success: true };
+    } catch (err) {
+      setError(err.message);
+      return { success: false, error: err.message };
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   const logout = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -57,7 +89,7 @@ export const useAuth = () => {
     }
   }, []);
 
-  return { user, loading, error, login, logout };
+  return { user, loading, error, login, register, logout };
 };
 
 export default useAuth;
