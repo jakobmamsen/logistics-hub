@@ -48,10 +48,11 @@ export const useAuth = () => {
     setError(null);
     try {
       // Create auth user
-      const { data: { user: newUser }, error: signUpError } = await supabase.auth.signUp({
+      const { data, error: signUpError } = await supabase.auth.signUp({
         email,
         password
       });
+      console.log("Signup response:", { data, signUpError });
       if (signUpError) throw signUpError;
 
       // Create profile
