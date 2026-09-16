@@ -18,11 +18,11 @@
 import React, { useState } from 'react';
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../hooks/useAuth';
-import { Button } from './Button';
-import { Badge } from './Badge';
-import { Modal } from './Modal';
-import { Form } from './Form';
-import { Alert } from './Alert';
+import Button from './Button';
+import Badge from './Badge';
+import Modal from './Modal';
+import Form from './Form';
+import Alert from './Alert';
 import { CheckCircle, Circle, Send, FileText, ChevronDown, Check } from 'lucide-react';
 
 /**

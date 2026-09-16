@@ -19,11 +19,11 @@
 import React, { useState, useEffect } from 'react';
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../hooks/useAuth';
-import { Button } from './Button';
-import { Badge } from './Badge';
-import { Modal } from './Modal';
-import { Form } from './Form';
-import { Alert } from './Alert';
+import Button from './Button';
+import Badge from './Badge';
+import Modal from './Modal';
+import Form from './Form';
+import Alert from './Alert';
 import { ChevronDown, Plus, CheckCircle, Clock, AlertCircle, Trash2 } from 'lucide-react';
 
 /**

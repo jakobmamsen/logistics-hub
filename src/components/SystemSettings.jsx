@@ -18,10 +18,10 @@
 import React, { useState, useEffect } from 'react';
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../hooks/useAuth';
-import { Button } from './Button';
-import { Badge } from './Badge';
-import { Tabs } from './Tabs';
-import { Alert } from './Alert';
+import Button from './Button';
+import Badge from './Badge';
+import Tabs from './Tabs';
+import Alert from './Alert';
 import { Eye, EyeOff, Copy, Plus, Trash2, RefreshCw, Settings, Key } from 'lucide-react';
 
 /**

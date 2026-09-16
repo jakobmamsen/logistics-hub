@@ -7,9 +7,10 @@ export { default as Modal } from './Modal';
 export { default as Tabs } from './Tabs';
 export { default as Table } from './Table';
 export { default as Notification } from './Notification';
+export { default as Form } from './Form';
 
-// Import and re-export Form with its sub-components
-export { default as Form, FormGroup, FormLabel, FormInput } from './Form';
+// Re-export Form sub-components as named exports
+export { FormGroup, FormLabel, FormInput } from './Form';
 
 // Aliases for common UI patterns
 export const CardBody = ({ children, className = '' }) => (

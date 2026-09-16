@@ -18,10 +18,10 @@
 import React, { useState, useRef } from 'react';
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../hooks/useAuth';
-import { Button } from './Button';
-import { Badge } from './Badge';
-import { Modal } from './Modal';
-import { Alert } from './Alert';
+import Button from './Button';
+import Badge from './Badge';
+import Modal from './Modal';
+import Alert from './Alert';
 import { Upload, Download, FileText, Trash2, Clock, ChevronDown } from 'lucide-react';
 
 /**
