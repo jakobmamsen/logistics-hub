@@ -17,7 +17,7 @@ export default function DashboardLayout({ children, pageTitle }) {
     { label: 'Dashboard', icon: '📊', path: '/' },
     { label: 'Quotes', icon: '💼', path: '/quotes' },
     { label: 'Jobs', icon: '📦', path: '/jobs' },
-    { label: 'Pre-Alerts', icon: '⚠️', path: '/pre-alerts' },
+    { label: 'Pre-Alerts', icon: '⚠️', path: '/alerts' },
     { label: 'Documents', icon: '📄', path: '/documents' },
     { label: 'Tasks', icon: '✓', path: '/tasks' },
     { label: 'Admin', icon: '⚙️', path: '/admin' },
