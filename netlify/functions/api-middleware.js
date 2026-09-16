@@ -1,4 +1,10 @@
-import { supabase } from '../supabase.js';
+import { createClient } from '@supabase/supabase-js';
+
+// Create Supabase client inline
+const supabase = createClient(
+  process.env.VITE_SUPABASE_URL,
+  process.env.VITE_SUPABASE_KEY
+);
 
 export const asyncHandler = (fn) => async (req, context) => {
   try {
