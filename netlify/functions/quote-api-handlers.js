@@ -15,7 +15,8 @@
 // 6. POST /api/quotes/{id}/approve - Manager approval
 // 7. POST /api/quotes/{id}/reject - Reject quote
 // 8. POST /api/quotes/{id}/send - Send to customer
-// 9. POST /api/quotes/{id}/won - Mark as won
+import { createClient } from "@supabase/supabase-js";
+const supabase = createClient(process.env.VITE_SUPABASE_URL, process.env.VITE_SUPABASE_KEY);
 // 10. POST /api/quotes/{id}/lost - Mark as lost
 //
 // ============================================================================

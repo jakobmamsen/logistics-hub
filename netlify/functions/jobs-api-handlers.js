@@ -15,7 +15,8 @@
 // 6. POST /api/jobs/{id}/tasks - Create task
 // 7. PATCH /api/jobs/{id}/tasks/{taskId} - Update task
 // 8. POST /api/jobs/{id}/documents - Upload document
-// 9. GET /api/jobs/{id}/documents/{docId}/download - Get signed URL
+import { createClient } from "@supabase/supabase-js";
+const supabase = createClient(process.env.VITE_SUPABASE_URL, process.env.VITE_SUPABASE_KEY);
 // 10. POST /api/jobs/{id}/exceptions - Create exception
 // 11. PATCH /api/jobs/{id}/exceptions/{exId} - Update exception
 // 12. POST /api/jobs/{id}/pre-alerts - Create pre-alert
