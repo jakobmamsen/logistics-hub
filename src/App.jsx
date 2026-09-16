@@ -9,7 +9,9 @@ import Dashboard from './components/Dashboard'
 import QuotesList from './components/QuotesList'
 import QuoteBuilder from './components/QuoteBuilder'
 import QuoteDetailPage from './components/QuoteDetailPage'
+import JobsList from './components/JobsList'
 import JobDetailPage from './components/JobDetailPage'
+import ExceptionTracker from './components/ExceptionTracker'
 import TaskManager from './components/TaskManager'
 import PreAlertManager from './components/PreAlertManager'
 import DocumentManager from './components/DocumentManager'
@@ -57,6 +59,14 @@ export default function App() {
         <Route
           path="/quotes/:id"
           element={user ? <QuoteDetailPage /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="/jobs"
+          element={user ? <JobsList /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="/exceptions"
+          element={user ? <ExceptionTracker /> : <Navigate to="/login" />}
         />
         <Route
           path="/jobs/:id"
