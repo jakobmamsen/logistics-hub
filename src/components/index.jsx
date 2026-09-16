@@ -54,3 +54,4 @@ export const StatusBadge = ({ status, className = '' }) => {
   };
   return <span className={`px-2 py-1 rounded text-xs font-semibold ${statusColors[status] || statusColors.inactive}`}>{status}</span>;
 };
+export { default as DashboardLayout } from './DashboardLayout';

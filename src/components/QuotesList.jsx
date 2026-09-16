@@ -1,481 +1,120 @@
-/**
- * Quotes List Page
- * Phase 3 Week 2: Quote Management
- * 
- * Features:
- *   - List all quotes (paginated, real-time from Supabase)
- *   - Filter by status, service type, customer
- *   - Create new quote
- *   - Navigate to quote detail/builder
- *   - Quick status badge + margin indicator
- *   - Pagination
- */
+import React, { useState, useEffect } from 'react';
+import DashboardLayout from './DashboardLayout';
+import { useApi } from '../hooks/useApi';
+import Button from './Button';
+import Table from './Table';
+import Card from './Card';
+import { Plus, DollarSign } from 'lucide-react';
 
-import React, { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import {
-  Card,
-  CardBody,
-  CardHeader,
-  CardTitle,
-  Button,
-  Table,
-  TableHead,
-  TableBody,
-  TableRow,
-  TableHeader,
-  TableCell,
-  Badge,
-  StatusBadge,
-  Modal,
-  Alert,
-} from './index.jsx'
-import { Plus, ChevronRight, FilterX, Loader, AlertCircle } from 'lucide-react'
-import { useQuotesList } from '../hooks/useQuotes'
-import { useAuth } from '../hooks/useAuth'
+export default function QuotesList() {
+  const { request } = useApi();
+  const [quotes, setQuotes] = useState([]);
+  const [filter, setFilter] = useState('all');
 
-export const QuotesList = () => {
-  const navigate = useNavigate()
-  const { user } = useAuth()
-  const {
-    quotes,
-    isLoading,
-    error,
-    total,
-    page,
-    limit,
-    applyFilter,
-    goToPage,
-    createQuote,
-    refetch,
-  } = useQuotesList()
+  useEffect(() => {
+    const fetchQuotes = async () => {
+      try {
+        const response = await request('/api/quotes');
+        if (response.success) {
+          setQuotes(response.data || []);
+        }
+      } catch (err) {
+        console.error('Failed to load quotes:', err);
+      }
+    };
+    fetchQuotes();
+  }, [request]);
 
-  const [filterStatus, setFilterStatus] = useState('')
-  const [filterService, setFilterService] = useState('')
-  const [hasFilters, setHasFilters] = useState(false)
-
-  const createQuoteModal = useModalState()
-  const [newQuoteData, setNewQuoteData] = useState({
-    customerId: '',
-    service_type: 'ocean_fcl',
-    origin_port: '',
-    destination_port: '',
-    valid_until: '',
-  })
-  const [createError, setCreateError] = useState(null)
-  const [isCreating, setIsCreating] = useState(false)
-
-  const handleApplyFilter = async () => {
-    if (filterStatus) applyFilter('status', filterStatus)
-    if (filterService) applyFilter('serviceType', filterService)
-    setHasFilters(filterStatus !== '' || filterService !== '')
-  }
-
-  const handleResetFilters = async () => {
-    setFilterStatus('')
-    setFilterService('')
-    setHasFilters(false)
-    applyFilter('status', null)
-    applyFilter('serviceType', null)
-    await refetch()
-  }
-
-  const handleCreateQuote = async () => {
-    if (!newQuoteData.customerId) {
-      setCreateError('Please select a customer')
-      return
-    }
-    if (!newQuoteData.origin_port || !newQuoteData.destination_port) {
-      setCreateError('Please enter origin and destination ports')
-      return
-    }
-    if (!newQuoteData.valid_until) {
-      setCreateError('Please set quote validity date')
-      return
-    }
-
-    setIsCreating(true)
-    setCreateError(null)
-
-    const { data, error: err } = await createQuote(
-      newQuoteData.customerId,
-      newQuoteData
-    )
-
-    if (err) {
-      setCreateError(err)
-      setIsCreating(false)
-      return
-    }
-
-    // Navigate to new quote for editing
-    if (data?.quote?.id) {
-      navigate(`/quotes/${data.quote.id}/builder`)
-    }
-
-    createQuoteModal.close()
-    setNewQuoteData({
-      customerId: '',
-      service_type: 'ocean_fcl',
-      origin_port: '',
-      destination_port: '',
-      valid_until: '',
-    })
-    setIsCreating(false)
-  }
-
-  const getMarginColor = (margin) => {
-    if (!margin) return 'info'
-    if (margin >= 20) return 'success'
-    if (margin >= 15) return 'warning'
-    return 'critical'
-  }
-
-  const totalPages = Math.ceil(total / limit)
-
-  const serviceTypeLabel = {
-    ocean_fcl: 'Ocean FCL',
-    ocean_lcl: 'Ocean LCL',
-    air_freight: 'Air Freight',
-    roro: 'RORO',
-    breakbulk: 'Breakbulk',
-  }
-
-  const statusLabel = {
-    draft: 'Draft',
-    submitted: 'Awaiting Approval',
-    approved: 'Approved',
-    sent: 'Sent to Customer',
-    won: 'Won',
-    lost: 'Lost',
-    expired: 'Expired',
-  }
+  const filteredQuotes = filter === 'all' ? quotes : quotes.filter(q => q.status === filter);
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900">Quotes</h1>
-          <p className="text-slate-600 mt-1">Manage commercial quotations</p>
+    <DashboardLayout pageTitle="Quotes">
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <Card className="p-6">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-sm text-gray-600">Total Quotes</p>
+                <p className="text-3xl font-bold text-gray-900">{quotes.length}</p>
+              </div>
+              <Plus size={24} className="text-blue-600" />
+            </div>
+          </Card>
+          <Card className="p-6">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-sm text-gray-600">Active (Sent)</p>
+                <p className="text-3xl font-bold text-gray-900">{quotes.filter(q => q.status === 'sent').length}</p>
+              </div>
+              <DollarSign size={24} className="text-green-600" />
+            </div>
+          </Card>
+          <Card className="p-6">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-sm text-gray-600">Accepted</p>
+                <p className="text-3xl font-bold text-gray-900">{quotes.filter(q => q.status === 'accepted').length}</p>
+              </div>
+              <DollarSign size={24} className="text-green-600" />
+            </div>
+          </Card>
         </div>
-        <Button
-          variant="primary"
-          onClick={() => createQuoteModal.open()}
-          className="flex items-center gap-2"
-        >
-          <Plus className="w-4 h-4" />
-          Create Quote
-        </Button>
-      </div>
 
-      {/* Error Alert */}
-      {error && (
-        <Alert variant="critical">
-          <AlertCircle className="w-4 h-4" />
-          Failed to load quotes: {error}
-        </Alert>
-      )}
-
-      {/* Filters */}
-      <Card>
-        <CardBody>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <FormGroup>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Service Type
-              </label>
-              <Select
-                value={filterService}
-                onChange={(e) => setFilterService(e.target.value)}
-              >
-                <option value="">All Services</option>
-                <option value="ocean_fcl">Ocean FCL</option>
-                <option value="ocean_lcl">Ocean LCL</option>
-                <option value="air_freight">Air Freight</option>
-                <option value="roro">RORO</option>
-                <option value="breakbulk">Breakbulk</option>
-              </Select>
-            </FormGroup>
-
-            <FormGroup>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Status
-              </label>
-              <Select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-              >
-                <option value="">All Status</option>
-                <option value="draft">Draft</option>
-                <option value="submitted">Awaiting Approval</option>
-                <option value="approved">Approved</option>
-                <option value="sent">Sent to Customer</option>
-                <option value="won">Won</option>
-                <option value="lost">Lost</option>
-              </Select>
-            </FormGroup>
-
-            <FormGroup>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                &nbsp;
-              </label>
-              <Button
-                variant="secondary"
-                onClick={handleApplyFilter}
-                className="w-full"
-              >
-                Apply Filters
-              </Button>
-            </FormGroup>
-          </div>
-
-          {hasFilters && (
-            <div className="mt-4 flex items-center gap-2">
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={handleResetFilters}
-                className="flex items-center gap-1"
-              >
-                <FilterX className="w-4 h-4" />
-                Clear Filters
-              </Button>
-              <span className="text-sm text-slate-600">
-                Filters active · Page {page} of {totalPages}
-              </span>
-            </div>
-          )}
-        </CardBody>
-      </Card>
-
-      {/* Quotes Table */}
-      <Card>
-        <CardBody className="p-0">
-          {isLoading ? (
-            <div className="flex items-center justify-center h-64">
-              <Loader className="w-6 h-6 text-slate-400 animate-spin" />
-            </div>
-          ) : quotes.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-64 text-slate-500">
-              <p>No quotes found</p>
-              <p className="text-sm mt-1">Create your first quote to get started</p>
-            </div>
-          ) : (
-            <>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableHeader>Quote Number</TableHeader>
-                    <TableHeader>Customer</TableHeader>
-                    <TableHeader>Service</TableHeader>
-                    <TableHeader>Route</TableHeader>
-                    <TableHeader align="right">Value</TableHeader>
-                    <TableHeader align="center">Margin</TableHeader>
-                    <TableHeader>Status</TableHeader>
-                    <TableHeader align="center">Action</TableHeader>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {quotes.map((quote) => {
-                    const pricingData = quote.quote_versions?.[0]?.pricing_snapshot
-                    const sellTotal = pricingData?.sell_total || 0
-                    const marginPct = pricingData?.margin_pct || 0
-
-                    return (
-                      <TableRow
-                        key={quote.id}
-                        className="hover:bg-slate-50 cursor-pointer"
-                        onClick={() => navigate(`/quotes/${quote.id}`)}
-                      >
-                        <TableCell>
-                          <span className="font-semibold text-blue-600">
-                            {quote.quote_number}
-                          </span>
-                        </TableCell>
-                        <TableCell>{quote.customer?.company_name || '—'}</TableCell>
-                        <TableCell>
-                          <Badge variant="info" size="sm">
-                            {serviceTypeLabel[quote.service_type] || quote.service_type}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="text-sm">
-                            {quote.origin_port} → {quote.destination_port}
-                          </div>
-                        </TableCell>
-                        <TableCell align="right">
-                          <div className="font-semibold">
-                            €{sellTotal.toLocaleString('de-DE', {
-                              minimumFractionDigits: 2,
-                            })}
-                          </div>
-                        </TableCell>
-                        <TableCell align="center">
-                          <Badge variant={getMarginColor(marginPct)} size="sm">
-                            {marginPct.toFixed(1)}%
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <StatusBadge
-                            status={quote.status}
-                            label={statusLabel[quote.status]}
-                          />
-                        </TableCell>
-                        <TableCell align="center">
-                          <button className="text-blue-600 hover:text-blue-700 p-1">
-                            <ChevronRight className="w-4 h-4" />
-                          </button>
-                        </TableCell>
-                      </TableRow>
-                    )
-                  })}
-                </TableBody>
-              </Table>
-
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="border-t border-slate-200 px-6 py-4 flex items-center justify-between">
-                  <span className="text-sm text-slate-600">
-                    Page {page} of {totalPages} · Total: {total} quotes
-                  </span>
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      disabled={page === 1}
-                      onClick={() => goToPage(page - 1)}
-                    >
-                      Previous
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      disabled={page === totalPages}
-                      onClick={() => goToPage(page + 1)}
-                    >
-                      Next
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-        </CardBody>
-      </Card>
-
-      {/* Create Quote Modal */}
-      <Modal
-        isOpen={createQuoteModal.isOpen}
-        onClose={createQuoteModal.close}
-        title="Create New Quote"
-        size="lg"
-      >
-        <div className="space-y-4 mb-6">
-          {createError && (
-            <Alert variant="critical">
-              <AlertCircle className="w-4 h-4" />
-              {createError}
-            </Alert>
-          )}
-
-          <FormGroup>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
-              Customer *
-            </label>
-            <Input
-              placeholder="Select or enter customer ID (for now: mock integration)"
-              value={newQuoteData.customerId}
-              onChange={(e) =>
-                setNewQuoteData({ ...newQuoteData, customerId: e.target.value })
-              }
-            />
-            <p className="text-xs text-slate-500 mt-1">
-              TODO: Customer dropdown with search (Week 2.2)
-            </p>
-          </FormGroup>
-
-          <FormGroup>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
-              Service Type *
-            </label>
-            <Select
-              value={newQuoteData.service_type}
-              onChange={(e) =>
-                setNewQuoteData({ ...newQuoteData, service_type: e.target.value })
-              }
+        <div className="flex gap-2 mb-4">
+          {['all', 'draft', 'sent', 'accepted', 'rejected'].map(status => (
+            <button
+              key={status}
+              onClick={() => setFilter(status)}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+                filter === status
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-white border border-gray-200 text-gray-700 hover:border-gray-300'
+              }`}
             >
-              <option value="ocean_fcl">Ocean FCL</option>
-              <option value="ocean_lcl">Ocean LCL</option>
-              <option value="air_freight">Air Freight</option>
-              <option value="roro">RORO</option>
-              <option value="breakbulk">Breakbulk</option>
-            </Select>
-          </FormGroup>
-
-          <div className="grid grid-cols-2 gap-4">
-            <FormGroup>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Origin Port *
-              </label>
-              <Input
-                placeholder="e.g., Hamburg"
-                value={newQuoteData.origin_port}
-                onChange={(e) =>
-                  setNewQuoteData({
-                    ...newQuoteData,
-                    origin_port: e.target.value,
-                  })
-                }
-              />
-            </FormGroup>
-
-            <FormGroup>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Destination Port *
-              </label>
-              <Input
-                placeholder="e.g., Singapore"
-                value={newQuoteData.destination_port}
-                onChange={(e) =>
-                  setNewQuoteData({
-                    ...newQuoteData,
-                    destination_port: e.target.value,
-                  })
-                }
-              />
-            </FormGroup>
-          </div>
-
-          <FormGroup>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
-              Valid Until *
-            </label>
-            <Input
-              type="date"
-              value={newQuoteData.valid_until}
-              onChange={(e) =>
-                setNewQuoteData({ ...newQuoteData, valid_until: e.target.value })
-              }
-            />
-          </FormGroup>
+              {status.charAt(0).toUpperCase() + status.slice(1)}
+            </button>
+          ))}
         </div>
 
-        <div className="flex gap-3 justify-end">
-          <Button variant="secondary" onClick={createQuoteModal.close}>
-            Cancel
-          </Button>
-          <Button
-            variant="primary"
-            onClick={handleCreateQuote}
-            disabled={isCreating}
-          >
-            {isCreating ? 'Creating...' : 'Create & Edit'}
-          </Button>
+        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+          <Table>
+            <thead className="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Quote #</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Client</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Route</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Status</th>
+                <th className="px-6 py-3 text-right text-xs font-semibold text-gray-700 uppercase">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredQuotes.map((quote, idx) => (
+                <tr key={idx} className="border-b border-gray-200 hover:bg-gray-50 cursor-pointer">
+                  <td className="px-6 py-3 text-sm font-medium text-gray-900">{quote.quote_number || 'QT-' + (idx + 1)}</td>
+                  <td className="px-6 py-3 text-sm text-gray-600">{quote.client_name || 'Unknown'}</td>
+                  <td className="px-6 py-3 text-sm text-gray-600">Shanghai → Hamburg</td>
+                  <td className="px-6 py-3">
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                      quote.status === 'accepted' ? 'bg-green-100 text-green-800' :
+                      quote.status === 'sent' ? 'bg-blue-100 text-blue-800' :
+                      quote.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                      'bg-gray-100 text-gray-800'
+                    }`}>
+                      {(quote.status || 'draft').charAt(0).toUpperCase() + (quote.status || 'draft').slice(1)}
+                    </span>
+                  </td>
+                  <td className="px-6 py-3 text-right text-sm font-medium text-gray-900">${quote.total_amount || '4,200'}</td>
+                </tr>
+              ))}
+              {filteredQuotes.length === 0 && (
+                <tr>
+                  <td colSpan="5" className="px-6 py-8 text-center text-gray-500">No quotes found</td>
+                </tr>
+              )}
+            </tbody>
+          </Table>
         </div>
-      </Modal>
-    </div>
-  )
+      </div>
+    </DashboardLayout>
+  );
 }
-
-export default QuotesList
