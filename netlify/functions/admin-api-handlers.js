@@ -15,9 +15,9 @@
 //
 // ============================================================================
 
-import { supabase } from '../supabase.js';
-import { asyncHandler } from '../api-middleware.js';
-import { validateInput, requirePermission, sanitizeOutput } from '../api-utils.js';
+import { supabase } ;
+import { asyncHandler } from './api-middleware.js';
+import { validateInput, requirePermission, sanitizeOutput } from './api-utils.js';
 
 // ============================================================================
 // USERS ENDPOINTS
