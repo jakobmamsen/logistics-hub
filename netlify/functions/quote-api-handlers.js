@@ -17,22 +17,9 @@
 // 8. POST /api/quotes/{id}/send - Send to customer
 import { createClient } from "@supabase/supabase-js";
 import { asyncHandler } from './api-middleware.js';
-import { validateInput, requirePermission, sanitizeOutput } from './api-utils.js';
+import { validateInput } from './api-utils.js';
 
 const supabase = createClient(process.env.VITE_SUPABASE_URL, process.env.VITE_SUPABASE_KEY);
-
-import { createClient } from '@supabase/supabase-js';
-import {
-  asyncHandler,
-  buildRequestContext,
-  requirePermission,
-  requireRole,
-  createdResponse,
-  successResponse,
-  errorResponse,
-  AuthorizationError,
-  ValidationError,
-  NotFoundError,
   logRequest
 } from './api-middleware.js';
 import {
