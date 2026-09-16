@@ -1,31 +1,44 @@
 import React from 'react';
+import { AlertCircle, CheckCircle, InfoIcon } from 'lucide-react';
 
-export const Alert = ({ 
+const Alert = ({ 
   type = 'info', 
   title, 
   message, 
   onClose,
-  className = '' 
+  className = '',
+  ...props 
 }) => {
-  const typeStyles = {
-    info: 'bg-blue-100 border-blue-400 text-blue-700',
-    success: 'bg-green-100 border-green-400 text-green-700',
-    warning: 'bg-yellow-100 border-yellow-400 text-yellow-700',
-    error: 'bg-red-100 border-red-400 text-red-700',
+  const types = {
+    info: { bgColor: 'bg-blue-50', borderColor: 'border-blue-200', textColor: 'text-blue-800', icon: InfoIcon },
+    success: { bgColor: 'bg-green-50', borderColor: 'border-green-200', textColor: 'text-green-800', icon: CheckCircle },
+    error: { bgColor: 'bg-red-50', borderColor: 'border-red-200', textColor: 'text-red-800', icon: AlertCircle },
+    warning: { bgColor: 'bg-yellow-50', borderColor: 'border-yellow-200', textColor: 'text-yellow-800', icon: AlertCircle },
   };
+  
+  const config = types[type] || types.info;
+  const Icon = config.icon;
 
   return (
-    <div className={`border-l-4 p-4 ${typeStyles[type]} ${className}`}>
-      {title && <h4 className="font-semibold">{title}</h4>}
-      {message && <p className="text-sm">{message}</p>}
-      {onClose && (
-        <button
-          onClick={onClose}
-          className="text-sm underline mt-2"
-        >
-          Dismiss
-        </button>
-      )}
+    <div 
+      className={`${config.bgColor} border ${config.borderColor} rounded-md p-4 ${config.textColor} ${className}`}
+      {...props}
+    >
+      <div className="flex items-start">
+        <Icon className="h-5 w-5 mr-3 flex-shrink-0 mt-0.5" />
+        <div className="flex-1">
+          {title && <h3 className="font-medium">{title}</h3>}
+          {message && <p className="text-sm mt-1">{message}</p>}
+        </div>
+        {onClose && (
+          <button 
+            onClick={onClose} 
+            className="ml-3 text-sm font-medium hover:opacity-75"
+          >
+            ✕
+          </button>
+        )}
+      </div>
     </div>
   );
 };

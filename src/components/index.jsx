@@ -1,13 +1,17 @@
-// Export all components
-export { default as Card } from './Card';
+// Export all components using default imports as named exports
 export { default as Button } from './Button';
 export { default as Alert } from './Alert';
 export { default as Badge } from './Badge';
-export { default as Form, FormGroup, FormLabel, FormInput } from './Form';
+export { default as Card } from './Card';
 export { default as Modal } from './Modal';
 export { default as Tabs } from './Tabs';
 export { default as Table } from './Table';
 export { default as Notification } from './Notification';
+
+// Import and re-export Form sub-components
+import Form, { FormGroup, FormLabel, FormInput } from './Form';
+export { default } from './Form';
+export { Form, FormGroup, FormLabel, FormInput };
 
 // Aliases for common UI patterns
 export const CardBody = ({ children, className = '' }) => (
@@ -49,47 +53,5 @@ export const StatusBadge = ({ status, className = '' }) => {
     pending: 'bg-yellow-100 text-yellow-800',
     error: 'bg-red-100 text-red-800',
   };
-  return (
-    <span className={`inline-block px-3 py-1 text-xs font-semibold rounded-full ${statusColors[status] || statusColors.inactive} ${className}`}>
-      {status}
-    </span>
-  );
-};
-
-export const Select = ({ label, options = [], error, className = '', ...props }) => (
-  <div className="w-full">
-    {label && <label className="block text-sm font-medium mb-1">{label}</label>}
-    <select
-      className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${error ? 'border-red-500' : 'border-gray-300'} ${className}`}
-      {...props}
-    >
-      {options.map((opt, idx) => (
-        <option key={idx} value={opt.value}>
-          {opt.label}
-        </option>
-      ))}
-    </select>
-    {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
-  </div>
-);
-
-export const Input = ({ label, error, className = '', ...props }) => (
-  <div className="w-full">
-    {label && <label className="block text-sm font-medium mb-1">{label}</label>}
-    <input
-      className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${error ? 'border-red-500' : 'border-gray-300'} ${className}`}
-      {...props}
-    />
-    {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
-  </div>
-);
-
-export const useModalState = (initialState = false) => {
-  const [isOpen, setIsOpen] = React.useState(initialState);
-  return {
-    isOpen,
-    open: () => setIsOpen(true),
-    close: () => setIsOpen(false),
-    toggle: () => setIsOpen(!isOpen),
-  };
+  return <span className={`px-2 py-1 rounded text-xs font-semibold ${statusColors[status] || statusColors.inactive}`}>{status}</span>;
 };
