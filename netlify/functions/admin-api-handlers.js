@@ -16,10 +16,10 @@
 // ============================================================================
 
 import { createClient } from "@supabase/supabase-js";
-const supabase = createClient(process.env.VITE_SUPABASE_URL, process.env.VITE_SUPABASE_KEY);
 import { asyncHandler } from './api-middleware.js';
 import { validateInput, requirePermission, sanitizeOutput } from './api-utils.js';
 
+const supabase = createClient(process.env.VITE_SUPABASE_URL, process.env.VITE_SUPABASE_KEY);
 // ============================================================================
 // USERS ENDPOINTS
 // ============================================================================

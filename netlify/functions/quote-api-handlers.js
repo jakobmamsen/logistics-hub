@@ -16,10 +16,10 @@
 // 7. POST /api/quotes/{id}/reject - Reject quote
 // 8. POST /api/quotes/{id}/send - Send to customer
 import { createClient } from "@supabase/supabase-js";
+import { asyncHandler } from './api-middleware.js';
+import { validateInput, requirePermission, sanitizeOutput } from './api-utils.js';
+
 const supabase = createClient(process.env.VITE_SUPABASE_URL, process.env.VITE_SUPABASE_KEY);
-// 10. POST /api/quotes/{id}/lost - Mark as lost
-//
-// ============================================================================
 
 import { createClient } from '@supabase/supabase-js';
 import {
