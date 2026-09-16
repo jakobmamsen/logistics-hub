@@ -28,7 +28,6 @@ import {
   TableHeader,
   TableCell,
   Modal,
-  useModalState,
   Alert,
 } from './index.jsx'
 import {

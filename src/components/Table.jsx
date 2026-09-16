@@ -1,6 +1,6 @@
 import React from 'react';
 
-export const Table = ({ children, className = '' }) => {
+const Table = ({ children, className = '' }) => {
   return (
     <div className="overflow-x-auto">
       <table className={`w-full border-collapse ${className}`}>

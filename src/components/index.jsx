@@ -1,4 +1,4 @@
-// Export all components using default imports as named exports
+// Re-export all components as named exports from their default exports
 export { default as Button } from './Button';
 export { default as Alert } from './Alert';
 export { default as Badge } from './Badge';
@@ -8,10 +8,8 @@ export { default as Tabs } from './Tabs';
 export { default as Table } from './Table';
 export { default as Notification } from './Notification';
 
-// Import and re-export Form sub-components
-import Form, { FormGroup, FormLabel, FormInput } from './Form';
-export { default } from './Form';
-export { Form, FormGroup, FormLabel, FormInput };
+// Import and re-export Form with its sub-components
+export { default as Form, FormGroup, FormLabel, FormInput } from './Form';
 
 // Aliases for common UI patterns
 export const CardBody = ({ children, className = '' }) => (

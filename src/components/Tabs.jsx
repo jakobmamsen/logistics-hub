@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-export const Tabs = ({ 
+const Tabs = ({ 
   tabs, 
   defaultTab = 0,
   className = '' 

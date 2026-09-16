@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlertCircle, CheckCircle, InfoIcon } from 'lucide-react';
+import { AlertCircle, CheckCircle, Info } from 'lucide-react';
 
 const Alert = ({ 
   type = 'info', 
@@ -10,7 +10,7 @@ const Alert = ({
   ...props 
 }) => {
   const types = {
-    info: { bgColor: 'bg-blue-50', borderColor: 'border-blue-200', textColor: 'text-blue-800', icon: InfoIcon },
+    info: { bgColor: 'bg-blue-50', borderColor: 'border-blue-200', textColor: 'text-blue-800', icon: Info },
     success: { bgColor: 'bg-green-50', borderColor: 'border-green-200', textColor: 'text-green-800', icon: CheckCircle },
     error: { bgColor: 'bg-red-50', borderColor: 'border-red-200', textColor: 'text-red-800', icon: AlertCircle },
     warning: { bgColor: 'bg-yellow-50', borderColor: 'border-yellow-200', textColor: 'text-yellow-800', icon: AlertCircle },

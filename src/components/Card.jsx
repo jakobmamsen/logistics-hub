@@ -1,6 +1,6 @@
 import React from 'react';
 
-export const Card = ({ 
+const Card = ({ 
   children, 
   className = '', 
   title,

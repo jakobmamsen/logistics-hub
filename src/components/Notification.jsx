@@ -1,6 +1,6 @@
 import React from 'react';
 
-export const Notification = ({ 
+const Notification = ({ 
   type = 'info',
   message,
   onClose,

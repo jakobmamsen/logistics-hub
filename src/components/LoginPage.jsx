@@ -19,10 +19,11 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { Button } from '../components/Button';
-import { Form } from '../components/Form';
-import { Alert } from '../components/Alert';
+
+
+
 import { Mail, Lock, ArrowRight, LogIn } from 'lucide-react';
+import { Button, Form, Alert } from './index';
 
 /**
  * LoginPage - User authentication
