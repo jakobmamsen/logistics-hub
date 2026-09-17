@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import DashboardLayout from './DashboardLayout';
 import Table from './Table';
 import Card from './Card';
@@ -9,6 +10,7 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL || '/.netlify/functions';
 const STATUSES = ['all', 'draft', 'submitted', 'approved', 'sent', 'won', 'lost'];
 
 export default function QuotesList() {
+  const navigate = useNavigate();
   const [quotes, setQuotes] = useState([]);
   const [filter, setFilter] = useState('all');
   const [loading, setLoading] = useState(true);
@@ -105,6 +107,15 @@ export default function QuotesList() {
               <Plus size={24} className="text-gray-500" />
             </div>
           </Card>
+        </div>
+
+        <div className="flex justify-end">
+          <button
+            onClick={() => navigate('/quotes/new')}
+            className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 flex items-center gap-2"
+          >
+            <Plus size={16} /> New Quote
+          </button>
         </div>
 
         <div className="flex gap-2 mb-4 flex-wrap">
