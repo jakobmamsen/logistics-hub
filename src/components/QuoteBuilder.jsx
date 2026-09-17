@@ -40,6 +40,7 @@ import {
   Loader,
 } from 'lucide-react'
 import { useQuote } from '../hooks/useQuotes'
+import { useModalState } from '../hooks/useModalState'
 
 export const QuoteBuilder = () => {
   const navigate = useNavigate()
