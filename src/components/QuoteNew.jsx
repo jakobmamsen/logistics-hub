@@ -316,7 +316,7 @@ export default function QuoteNew() {
 
         {step === 4 && (
           <Card className="p-6 space-y-3">
-            <h3 className="font-semibold text-gray-900">Review</h3>
+            <h3 className="font-semibold text-gray-900">Review &amp; save</h3>
             <div className="text-sm text-gray-700 space-y-1">
               <p>Customer: <strong>{addingNew ? nc.name : customers.find((c) => c.id === f.customer_id)?.name}</strong></p>
               <p>Title: <strong>{f.title}</strong></p>
@@ -329,7 +329,7 @@ export default function QuoteNew() {
               )}
             </div>
             <p className="text-xs text-gray-500 pt-2">
-              Creates a draft quote. Totals are recalculated server-side on save.
+              Saves as a draft. You can add lines, revise pricing and submit for approval afterwards.
             </p>
           </Card>
         )}
@@ -351,7 +351,7 @@ export default function QuoteNew() {
             <button onClick={submit} disabled={saving}
               className="px-5 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2">
               {saving && <Loader size={16} className="animate-spin" />}
-              {saving ? 'Creating...' : 'Create quote'}
+              {saving ? 'Saving...' : 'Save as draft'}
             </button>
           )}
           <button onClick={() => navigate('/quotes')} disabled={saving}
