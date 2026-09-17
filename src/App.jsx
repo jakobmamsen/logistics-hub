@@ -8,6 +8,7 @@ import RegisterPage from './components/RegisterPage'
 import Dashboard from './components/Dashboard'
 import QuotesList from './components/QuotesList'
 import QuoteBuilder from './components/QuoteBuilder'
+import QuoteNew from './components/QuoteNew'
 import QuoteDetailPage from './components/QuoteDetailPage'
 import JobsList from './components/JobsList'
 import JobDetailPage from './components/JobDetailPage'
@@ -54,7 +55,7 @@ export default function App() {
         />
         <Route
           path="/quotes/new"
-          element={user ? <QuoteBuilder /> : <Navigate to="/login" />}
+          element={user ? <QuoteNew /> : <Navigate to="/login" />}
         />
         <Route
           path="/quotes/:id"
