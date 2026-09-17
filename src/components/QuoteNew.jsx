@@ -101,7 +101,7 @@ export default function QuoteNew() {
         }),
       });
       if (!res.success) throw new Error(res.error || 'Could not create the quote');
-      navigate(`/quotes/${res.data.quote_id}`);
+      navigate('/quotes');
     } catch (e) {
       setError(e.message);
       setSaving(false);
