@@ -24,6 +24,16 @@ const BLUE = rgb(0.145, 0.388, 0.922);   // #2563EB
 const GREY = rgb(0.45, 0.48, 0.53);
 const LINE = rgb(0.886, 0.91, 0.941);
 
+// StandardFonts are WinAnsi only. Map the Nordic letters we expect and
+// drop anything else, so one odd character can't fail the whole document.
+const ascii = (v) => String(v ?? '-')
+  .replace(/\u00e6/g, 'ae').replace(/\u00c6/g, 'AE')
+  .replace(/\u00f8/g, 'o').replace(/\u00d8/g, 'O')
+  .replace(/\u00e5/g, 'a').replace(/\u00c5/g, 'A')
+  .replace(/\u2192/g, '->').replace(/\u2013|\u2014/g, '-')
+  .replace(/[\u2018\u2019]/g, "'").replace(/[\u201c\u201d]/g, '"')
+  .replace(/[^\x20-\x7E]/g, '');
+
 const money = (n, cur = 'EUR') =>
   `${cur} ${Number(n || 0).toLocaleString('en-US', {
     minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -89,10 +99,10 @@ export const handler = async (event) => {
     let y = 842;
 
     const text = (s, x, yy, { size = 10, font = reg, color = NAVY } = {}) =>
-      page.drawText(String(s ?? '-'), { x, y: yy, size, font, color });
+      page.drawText(ascii(s), { x, y: yy, size, font, color });
 
     const right = (s, xRight, yy, { size = 10, font = reg, color = NAVY } = {}) => {
-      const str = String(s ?? '-');
+      const str = ascii(s);
       page.drawText(str, { x: xRight - font.widthOfTextAtSize(str, size), y: yy, size, font, color });
     };
 
@@ -195,7 +205,7 @@ export const handler = async (event) => {
       let ln = '';
       for (const w of words) {
         const test = ln ? `${ln} ${w}` : w;
-        if (reg.widthOfTextAtSize(test, 7.5) > W - 2 * M - 10) {
+        if (reg.widthOfTextAtSize(ascii(test), 7.5) > W - 2 * M - 10) {
           text(ln, M, y, { size: 7.5, color: GREY }); y -= 9.5; ln = w;
         } else ln = test;
       }
@@ -204,7 +214,7 @@ export const handler = async (event) => {
 
     page.drawLine({ start: { x: M, y: 48 }, end: { x: W - M, y: 48 }, thickness: 0.5, color: LINE });
     text(`${COMPANY.name}  |  ${COMPANY.address}`, M, 36, { size: 7.5, color: GREY });
-    right(`${q.reference_number}  ยท  page 1 of 1`, W - M, 36, { size: 7.5, color: GREY });
+    right(`${q.reference_number} - page 1 of 1`, W - M, 36, { size: 7.5, color: GREY });
 
     const bytes = await pdf.save();
     return {
