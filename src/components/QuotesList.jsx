@@ -84,7 +84,7 @@ export default function QuotesList() {
     }
   }
 
-  const customerName = (q) = q.customer_name ?? '\u2014';
+  const customerName = (q) => q.customer_name ?? '\u2014';
 
   return (
     <DashboardLayout pageTitle="Quotes">
