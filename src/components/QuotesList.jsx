@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import DashboardLayout from './DashboardLayout';
 import Table from './Table';
 import Card from './Card';
-import { Plus, DollarSign, FileText } from 'lucide-react';
+import { Plus, DollarSign, FileText , Download } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/.netlify/functions';
 
@@ -63,7 +63,28 @@ export default function QuotesList() {
           maximumFractionDigits: 0,
         }).format(v);
 
-  const customerName = (q) => q.customer_name ?? '\u2014';
+  async function downloadPdf(quote) {
+    try {
+      const res = await fetch(`${API_BASE}/quote-pdf?id=${quote.id}`);
+      if (!res.ok) {
+        const msg = await res.json().catch(() => null);
+        throw new Error(msg?.error || `PDF failed (${res.status})`);
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${quote.reference_number}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      setError(e.message);
+    }
+  }
+
+  const customerName = (q) = q.customer_name ?? '\u2014';
 
   return (
     <DashboardLayout pageTitle="Quotes">
@@ -143,12 +164,13 @@ export default function QuotesList() {
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Created</th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Status</th>
                 <th className="px-6 py-3 text-right text-xs font-semibold text-gray-700 uppercase">Sell Total</th>
+                <th className="px-6 py-3 text-center text-xs font-semibold text-gray-700 uppercase">PDF</th>
               </tr>
             </thead>
             <tbody>
               {loading && (
                 <tr>
-                  <td colSpan="5" className="px-6 py-8 text-center text-gray-500">
+                  <td colSpan="6" className="px-6 py-8 text-center text-gray-500">
                     Loading quotes...
                   </td>
                 </tr>
@@ -189,12 +211,21 @@ export default function QuotesList() {
                   <td className="px-6 py-3 text-right text-sm font-medium text-gray-900">
                     {money(sellTotal(quote))}
                   </td>
+                  <td className="px-6 py-3 text-center">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); downloadPdf(quote); }}
+                      title={`Download ${quote.reference_number}.pdf`}
+                      className="p-1.5 rounded text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition"
+                    >
+                      <Download size={16} />
+                    </button>
+                  </td>
                 </tr>
               ))}
 
               {!loading && filteredQuotes.length === 0 && (
                 <tr>
-                  <td colSpan="5" className="px-6 py-8 text-center text-gray-500">
+                  <td colSpan="6" className="px-6 py-8 text-center text-gray-500">
                     No quotes found
                   </td>
                 </tr>
