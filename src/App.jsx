@@ -9,6 +9,7 @@ import Dashboard from './components/Dashboard'
 import QuotesList from './components/QuotesList'
 import RequestsList from './components/RequestsList'
 import RequestNew from './components/RequestNew'
+import RequestDetail from './components/RequestDetail'
 import QuoteBuilder from './components/QuoteBuilder'
 import QuoteNew from './components/QuoteNew'
 import QuoteDetailPage from './components/QuoteDetailPage'
@@ -58,6 +59,14 @@ export default function App() {
         <Route
           path="/requests/new"
           element={user ? <RequestNew /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="/requests/:id"
+          element={user ? <RequestDetail /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="/quotes/:id/builder"
+          element={user ? <QuoteBuilder /> : <Navigate to="/login" />}
         />
         <Route
           path="/quotes"
