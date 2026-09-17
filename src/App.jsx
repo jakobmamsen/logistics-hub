@@ -12,6 +12,7 @@ import RequestNew from './components/RequestNew'
 import RequestDetail from './components/RequestDetail'
 import QuoteBuilder from './components/QuoteBuilder'
 import QuoteNew from './components/QuoteNew'
+import QuoteEdit from './components/QuoteEdit'
 import QuoteDetailPage from './components/QuoteDetailPage'
 import JobsList from './components/JobsList'
 import JobDetailPage from './components/JobDetailPage'
@@ -78,7 +79,7 @@ export default function App() {
         />
         <Route
           path="/quotes/:id"
-          element={user ? <QuoteDetailPage /> : <Navigate to="/login" />}
+          element={user ? <QuoteEdit /> : <Navigate to="/login" />}
         />
         <Route
           path="/jobs"

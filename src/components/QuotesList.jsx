@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import DashboardLayout from './DashboardLayout';
 import Table from './Table';
 import Card from './Card';
-import { Plus, DollarSign, FileText , Download } from 'lucide-react';
+import { Plus, DollarSign, FileText , Download, Pencil } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/.netlify/functions';
 
@@ -211,7 +211,14 @@ export default function QuotesList() {
                   <td className="px-6 py-3 text-right text-sm font-medium text-gray-900">
                     {money(sellTotal(quote))}
                   </td>
-                  <td className="px-6 py-3 text-center">
+                  <td className="px-6 py-3 text-center whitespace-nowrap">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); navigate(`/quotes/${quote.id}`); }}
+                      title="Edit quote"
+                      className="p-1.5 rounded text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition mr-1"
+                    >
+                      <Pencil size={16} />
+                    </button>
                     <button
                       onClick={(e) => { e.stopPropagation(); downloadPdf(quote); }}
                       title={`Download ${quote.reference_number}.pdf`}
