@@ -164,7 +164,7 @@ export default function QuotesList() {
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Created</th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Status</th>
                 <th className="px-6 py-3 text-right text-xs font-semibold text-gray-700 uppercase">Sell Total</th>
-                <th className="px-6 py-3 text-center text-xs font-semibold text-gray-700 uppercase">PDF</th>
+                <th className="px-6 py-3 text-center text-xs font-semibold text-gray-700 uppercase">Actions</th>
               </tr>
             </thead>
             <tbody>
