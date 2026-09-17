@@ -6,6 +6,7 @@ export const useAuth = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [userRole, setUserRole] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
     // Check current session
@@ -16,12 +17,21 @@ export const useAuth = () => {
         
         // Fetch user role if logged in
         if (session?.user) {
-          const { data } = await supabase
-            .from('profiles')
-            .select('role')
+          // name lives on users; role comes via role_assignment -> role
+          const { data: profile } = await supabase
+            .from('users')
+            .select('id, name, email, status')
             .eq('id', session.user.id)
-            .single();
-          setUserRole(data?.role || 'user');
+            .maybeSingle();
+          setCurrentUser(profile || null);
+
+          const { data: roles } = await supabase
+            .from('role_assignment')
+            .select('role:role_id ( name )')
+            .eq('user_id', session.user.id);
+          const names = (roles || []).map((r) => r.role?.name).filter(Boolean);
+          const rank = ['admin', 'manager', 'commercial', 'finance', 'operations'];
+          setUserRole(rank.find((r) => names.includes(r)) || null);
         }
       } catch (err) {
         setError(err.message);
@@ -69,16 +79,16 @@ export const useAuth = () => {
       // Create profile
       const newUser = data?.user;
       if (!newUser) throw new Error('User creation failed - no user returned');
+      // users table: no role or team columns - those are separate tables
       const { error: profileError } = await supabase
-        .from('profiles')
-        .insert([{
-          id: newUser.id,
-          email,
-          full_name: name,
-          team_id: team,
-          role: 'user'
-        }]);
+        .from('users')
+        .insert([{ id: newUser.id, email, name, status: 'active' }]);
       if (profileError) throw profileError;
+
+      if (team) {
+        await supabase.from('team_member')
+          .insert([{ user_id: newUser.id, team_id: team, is_primary: true }]);
+      }
 
       return { success: true };
     } catch (err) {
@@ -110,7 +120,7 @@ export const useAuth = () => {
 
   return { 
     user, 
-    currentUser: user,
+    currentUser: currentUser || user,
     loading, 
     error, 
     login, 
