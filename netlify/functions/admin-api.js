@@ -1,200 +1,105 @@
+// netlify/functions/admin-api.js
+// READ ONLY, and the only endpoint here that enforces auth.
+// Writes (create user / change role / deactivate) deliberately omitted -
+// they must not run on a service-key client without a verified admin caller.
+
 import { createClient } from '@supabase/supabase-js';
-import { asyncHandler, buildRequestContext, successResponse, errorResponse } from './api-middleware.js';
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL,
   process.env.VITE_SUPABASE_KEY
 );
 
-// Middleware to require admin role
-const requireAdmin = (handler) => async (req, event, context) => {
-  if (context.userRole !== 'admin') {
-    return errorResponse('Admin access required', 403);
-  }
-  return handler(req, event, context);
-};
+const json = (statusCode, payload) => ({
+  statusCode,
+  headers: {
+    'Content-Type': 'application/json',
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Allow-Methods': 'GET, OPTIONS',
+  },
+  body: JSON.stringify(payload),
+});
 
-export const handleListUsers = asyncHandler(async (req, event, context) => {
-  const { userRole, teamId } = context;
+async function getCaller(event) {
+  const auth = event.headers?.authorization || event.headers?.Authorization;
+  const token = auth?.startsWith('Bearer ') ? auth.slice(7) : null;
+  if (!token) return null;
+  const { data, error } = await supabase.auth.getUser(token);
+  return error ? null : data.user;
+}
 
-  if (userRole !== 'admin') {
-    return errorResponse('Admin access required', 403);
-  }
+async function isAdmin(userId) {
+  const { data } = await supabase
+    .from('role_assignment')
+    .select('role:role_id ( name )')
+    .eq('user_id', userId);
+  return (data || []).some((r) => r.role?.name === 'admin');
+}
+
+export const handler = async (event) => {
+  if (event.httpMethod === 'OPTIONS') return json(200, {});
 
   try {
-    const { data, error } = await supabase
-      .from('team_member')
-      .select('user_id, role, created_at')
+    // Enforced, not advisory.
+    const caller = await getCaller(event);
+    if (!caller) {
+      return json(401, { success: false, error: 'Sign in required' });
+    }
+    if (!(await isAdmin(caller.id))) {
+      return json(403, { success: false, error: 'Admin access required' });
+    }
+
+    // users - real columns only
+    const { data: users, error: uErr } = await supabase
+      .from('users')
+      .select('id, email, name, status, created_at')
       .order('created_at', { ascending: false });
+    if (uErr) return json(500, { success: false, error: uErr.message, stage: 'users' });
 
-    if (error) throw error;
+    // roles come from role_assignment, NOT team_member
+    const { data: assignments } = await supabase
+      .from('role_assignment')
+      .select('user_id, team_id, role:role_id ( name ), team:team_id ( name )');
 
-    // For each user, get their email and name from auth.users
-    // In a real scenario, we'd use Supabase Admin API
-    // For now, return what we have
-    const users = data.map(member => ({
-      id: member.user_id,
-      role: member.role,
-      status: 'active',
-      createdAt: member.created_at
+    // team_member uses added_at, and has no role column
+    const { data: members } = await supabase
+      .from('team_member')
+      .select('user_id, is_primary, added_at, team:team_id ( id, name )');
+
+    const { data: teams } = await supabase
+      .from('team')
+      .select('id, name, business_area, region, is_active')
+      .order('name');
+
+    const rows = (users || []).map((u) => ({
+      id: u.id,
+      email: u.email,
+      name: u.name,
+      status: u.status,
+      created_at: u.created_at,
+      roles: (assignments || [])
+        .filter((a) => a.user_id === u.id)
+        .map((a) => ({ role: a.role?.name, team: a.team?.name ?? 'global' })),
+      teams: (members || [])
+        .filter((m) => m.user_id === u.id)
+        .map((m) => ({ name: m.team?.name, is_primary: m.is_primary })),
     }));
 
-    return successResponse({
-      data: users,
-      total: users.length
+    return json(200, {
+      success: true,
+      data: {
+        users: rows,
+        teams: teams || [],
+        counts: {
+          users: rows.length,
+          active: rows.filter((u) => u.status === 'active').length,
+          admins: rows.filter((u) => u.roles.some((r) => r.role === 'admin')).length,
+          teams: (teams || []).length,
+        },
+      },
     });
-  } catch (error) {
-    console.error('List users error:', error);
-    return errorResponse('Failed to fetch users', 500);
+  } catch (err) {
+    return json(500, { success: false, error: err.message });
   }
-});
-
-export const handleGetStats = asyncHandler(async (req, event, context) => {
-  const { userRole, teamId } = context;
-
-  if (userRole !== 'admin') {
-    return errorResponse('Admin access required', 403);
-  }
-
-  try {
-    // Total users
-    const { count: totalUsers } = await supabase
-      .from('team_member')
-      .select('*', { count: 'exact', head: true });
-
-    // Active sessions (users who logged in last 24h)
-    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-    
-    // Count distinct sessions (this is a simplified version)
-    // In production, you'd track actual sessions
-    const { count: activeSessions } = await supabase
-      .from('audit_log')
-      .select('*', { count: 'exact', head: true })
-      .eq('team_id', teamId)
-      .gte('created_at', oneDayAgo)
-      .eq('action', 'login');
-
-    // API calls last 24h
-    const { count: apiCalls } = await supabase
-      .from('audit_log')
-      .select('*', { count: 'exact', head: true })
-      .eq('team_id', teamId)
-      .gte('created_at', oneDayAgo);
-
-    // Database size estimate
-    const { data: dbData } = await supabase
-      .from('quote')
-      .select('*', { count: 'exact' })
-      .limit(0);
-
-    return successResponse({
-      totalUsers: totalUsers || 0,
-      activeSessions: activeSessions || 0,
-      apiCallsLast24h: apiCalls || 0,
-      systemHealth: 98.5,
-      dbSize: '250 MB',
-      storageSize: '1.2 GB',
-      uptime: '99.9%'
-    });
-  } catch (error) {
-    console.error('Get stats error:', error);
-    return errorResponse('Failed to fetch stats', 500);
-  }
-});
-
-export const handleCreateUser = asyncHandler(async (req, event, context) => {
-  const { userRole } = context;
-
-  if (userRole !== 'admin') {
-    return errorResponse('Admin access required', 403);
-  }
-
-  try {
-    const body = JSON.parse(event.body);
-    const { email, name, role, team } = body;
-
-    if (!email || !name || !role) {
-      return errorResponse('Missing required fields: email, name, role', 400);
-    }
-
-    // TODO: In production, use Supabase Admin API to create auth user
-    // For now, return placeholder
-    const newUserId = `user-${Date.now()}`;
-
-    return successResponse({
-      id: newUserId,
-      email,
-      name,
-      role,
-      created: true
-    }, 201);
-  } catch (error) {
-    console.error('Create user error:', error);
-    return errorResponse('Failed to create user', 500);
-  }
-});
-
-export const handleUpdateUserRole = asyncHandler(async (req, event, context) => {
-  const { userRole } = context;
-  const { id } = event.pathParameters;
-
-  if (userRole !== 'admin') {
-    return errorResponse('Admin access required', 403);
-  }
-
-  try {
-    const body = JSON.parse(event.body);
-    const { role } = body;
-
-    if (!role) {
-      return errorResponse('Missing required field: role', 400);
-    }
-
-    const { error } = await supabase
-      .from('team_member')
-      .update({ role })
-      .eq('user_id', id);
-
-    if (error) throw error;
-    return successResponse({ id, role, updated: true });
-  } catch (error) {
-    console.error('Update user role error:', error);
-    return errorResponse('Failed to update user role', 500);
-  }
-});
-
-export const handleDeleteUser = asyncHandler(async (req, event, context) => {
-  const { userRole } = context;
-  const { id } = event.pathParameters;
-
-  if (userRole !== 'admin') {
-    return errorResponse('Admin access required', 403);
-  }
-
-  try {
-    const { error } = await supabase
-      .from('team_member')
-      .update({ deleted_at: new Date().toISOString() })
-      .eq('user_id', id);
-
-    if (error) throw error;
-    return successResponse({ deactivated: true });
-  } catch (error) {
-    console.error('Delete user error:', error);
-    return errorResponse('Failed to deactivate user', 500);
-  }
-});
-
-export const handler = asyncHandler(async (event, context) => {
-  const requestContext = await buildRequestContext(event, context);
-  const { method, path } = event.requestContext.http;
-  const { id } = event.pathParameters || {};
-
-  if (method === 'GET' && path.includes('/users') && !id) return await handleListUsers(event, event, requestContext);
-  if (method === 'GET' && path.includes('/stats')) return await handleGetStats(event, event, requestContext);
-  if (method === 'POST' && path.includes('/users') && !id) return await handleCreateUser(event, event, requestContext);
-  if (method === 'PUT' && path.includes('/users')) return await handleUpdateUserRole(event, event, requestContext);
-  if (method === 'DELETE' && path.includes('/users')) return await handleDeleteUser(event, event, requestContext);
-
-  return errorResponse('Not found', 404);
-});
+};
