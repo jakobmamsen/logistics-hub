@@ -15,7 +15,6 @@ export default function DashboardLayout({ children, pageTitle }) {
 
   const menuItems = [
     { label: 'Dashboard', icon: '📊', path: '/' },
-    { label: 'Requests', icon: '📥', path: '/requests' },
     { label: 'Quotes', icon: '💼', path: '/quotes' },
     { label: 'Jobs', icon: '📦', path: '/jobs' },
     { label: 'Pre-Alerts', icon: '⚠️', path: '/alerts' },
